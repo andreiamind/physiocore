@@ -5,6 +5,7 @@ import Markdown from 'react-markdown';
 import { format, parseISO } from 'date-fns';
 import { IntensityChart } from './IntensityChart';
 import { SymptomLog } from '../types';
+import { hasApiKey } from '../services/geminiService';
 
 interface DashboardProps {
   logs: SymptomLog[];
@@ -62,14 +63,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div className="relative z-10">
             <h2 className="text-brand-dark font-mono text-xs uppercase tracking-widest font-bold mb-2">Status do Lab</h2>
             <p className="text-brand-dark text-2xl font-display font-extrabold leading-tight">
-              {logs.length < 3 
-                ? "Continue registrando para desbloquear análise." 
-                : "Padrões identificados. Pronto para análise."}
+              {!hasApiKey 
+                ? "Configure sua chave API para habilitar análises."
+                : logs.length < 3 
+                  ? "Continue registrando para desbloquear análise." 
+                  : "Padrões identificados. Pronto para análise."}
             </p>
           </div>
           <button 
             onClick={onAnalyze}
-            disabled={isAnalyzing || logs.length < 3}
+            disabled={isAnalyzing || logs.length < 3 || !hasApiKey}
             className="relative z-10 mt-6 w-full py-4 bg-brand-dark text-brand-neon rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-black transition-all disabled:opacity-50"
           >
             {isAnalyzing ? (

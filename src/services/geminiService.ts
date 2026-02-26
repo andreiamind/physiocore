@@ -1,12 +1,29 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { SymptomLog } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+let aiInstance: GoogleGenAI | null = null;
+
+function getAiInstance() {
+  if (!aiInstance) {
+    const apiKey = typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : undefined;
+    
+    if (!apiKey) {
+      console.warn("GEMINI_API_KEY não encontrada. A análise não funcionará.");
+    }
+    
+    aiInstance = new GoogleGenAI({ apiKey: apiKey || "" });
+  }
+  return aiInstance;
+}
+
+export const hasApiKey = !!(typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : undefined);
 
 export async function analyzePatterns(logs: SymptomLog[]) {
   if (logs.length < 3) {
     return "Adicione pelo menos 3 registros para que eu possa identificar padrões.";
   }
+
+  const ai = getAiInstance();
 
   const logsSummary = logs.map(l => ({
     data: l.date,
