@@ -18,7 +18,8 @@ function getAiInstance() {
 
 export const hasApiKey = !!(
   (typeof process !== 'undefined' && process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== "") ||
-  (import.meta as any).env?.VITE_GEMINI_API_KEY
+  (import.meta as any).env?.VITE_GEMINI_API_KEY ||
+  (import.meta as any).env?.GEMINI_API_KEY
 );
 
 export async function analyzePatterns(logs: SymptomLog[]) {
