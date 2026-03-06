@@ -5,7 +5,16 @@ let aiInstance: GoogleGenAI | null = null;
 
 function getAiInstance() {
   if (!aiInstance) {
-    const apiKey = typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : undefined;
+    let apiKey = undefined;
+    
+    // Try to get API key from various sources
+    if (typeof process !== 'undefined' && process.env.GEMINI_API_KEY) {
+      apiKey = process.env.GEMINI_API_KEY;
+    } else if ((import.meta as any).env?.VITE_GEMINI_API_KEY) {
+      apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY;
+    } else if ((import.meta as any).env?.GEMINI_API_KEY) {
+      apiKey = (import.meta as any).env.GEMINI_API_KEY;
+    }
     
     if (!apiKey) {
       console.warn("GEMINI_API_KEY não encontrada. A análise não funcionará.");
@@ -43,7 +52,7 @@ export async function analyzePatterns(logs: SymptomLog[]) {
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3.1-pro-preview",
       contents: `Analise os seguintes registros de um paciente de fisioterapia. 
       Identifique correlações CLÍNICAS e MULTIFATORIAIS.
       
@@ -63,9 +72,27 @@ export async function analyzePatterns(logs: SymptomLog[]) {
       }
     });
 
-    return response.text || "Não foi possível gerar uma análise no momento.";
-  } catch (error) {
-    console.error("Gemini Error:", error);
-    return "Ocorreu um erro ao analisar seus dados. Tente novamente mais tarde.";
+    if (!response.text) {
+      console.error("Gemini Response empty:", response);
+      return "O modelo não retornou uma resposta válida. Tente novamente.";
+    }
+
+    return response.text;
+  } catch (error: any) {
+    console.error("Gemini Error Details:", error);
+    
+    if (error.message?.includes("API_KEY_INVALID")) {
+      return "Erro: Chave API inválida. Verifique as configurações de Segredos no AI Studio.";
+    }
+    
+    if (error.message?.includes("SAFETY")) {
+      return "A análise foi bloqueada pelos filtros de segurança. Tente remover termos sensíveis ou medicamentos específicos das notas.";
+    }
+
+    if (error.message?.includes("quota") || error.message?.includes("429")) {
+      return "Limite de uso atingido. Aguarde um momento e tente novamente.";
+    }
+
+    return `Ocorreu um erro ao analisar seus dados: ${error.message || "Erro desconhecido"}. Tente novamente mais tarde.`;
   }
 }

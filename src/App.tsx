@@ -51,6 +51,12 @@ export default function App() {
 
   const handleArchive = () => {
     if (analysis && logs.length > 0) {
+      // Don't archive if it's an error message
+      if (analysis.includes("Ocorreu um erro") || analysis.includes("Erro:") || analysis.includes("Limite de uso") || analysis.includes("bloqueada")) {
+        alert("Não é possível arquivar um erro. Tente gerar a análise novamente.");
+        return;
+      }
+      
       archiveAnalysis(analysis, logs);
       setAnalysis(null);
       localStorage.removeItem('physio_analysis_v2');
